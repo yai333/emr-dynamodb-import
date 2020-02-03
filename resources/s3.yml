@@ -1,0 +1,14 @@
+Resources:
+  LogBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+  S3BucketCsvimport:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      BucketName: ${self:custom.csvImportBucketName}

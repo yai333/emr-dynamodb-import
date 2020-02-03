@@ -1,0 +1,102 @@
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow SSH from anywhere"
+      VpcId: ${self:custom.vpc.vpcId}
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  ServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - elasticmapreduce.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+  JobFlowRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: JobFlowRole
+  Cluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Name: ${self:service.name}
+      VisibleToAllUsers: true
+      LogUri: "s3://aiyi.hive/emr-logs/"
+      ReleaseLabel: emr-5.28.1
+      Applications:
+        - Name: Hadoop
+        - Name: Livy
+        - Name: Pig
+        - Name: Hue
+        - Name: Presto
+        - Name: Hive
+      JobFlowRole:
+        Ref: InstanceProfile
+      ServiceRole:
+        Ref: ServiceRole
+      ScaleDownBehavior: TERMINATE_AT_TASK_COMPLETION
+      Configurations:
+        - Classification: hive-site
+          ConfigurationProperties:
+            hive.execution.engine: mr
+      Instances:
+        TerminationProtected: false
+        Ec2KeyName: emr
+        Ec2SubnetId: ${self:custom.vpc.subsetId}
+        AdditionalMasterSecurityGroups:
+          - Ref: SecurityGroup
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: m1.medium
+          Market: ON_DEMAND
+          Name: MasterInstance
+        CoreInstanceGroup:
+          InstanceCount: 2
+          InstanceType: m1.medium
+          Market: ON_DEMAND
+          Name: CoreInstance
+  CreateDBMetaTable:
+    Type: AWS::EMR::Step
+    Properties:
+      ActionOnFailure: CONTINUE
+      HadoopJarStep:
+        Args:
+          - hive-script
+          - "--run-hive-script"
+          - "--args"
+          - "-f"
+          - "Fn::Join":
+              - "/"
+              - - "s3://"
+                - Ref: LogBucket
+                - "scripts/dynamodb_hive.q"
+          - "-d"
+          - DYNAMODBTABLE=${self:custom.contactsTable}
+        Jar: command-runner.jar
+        StepProperties: []
+      JobFlowId:
+        Ref: Cluster
+      Name: Create Dynamodb Metadata Table

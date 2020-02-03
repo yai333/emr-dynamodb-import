@@ -1,0 +1,67 @@
+service:
+  name: emrdynamodbimport
+
+package:
+  include:
+    - "scripts/*.q"
+    - "src/*.py"
+  exclude:
+    - "**/*"
+plugins:
+  - serverless-python-requirements
+  - serverless-pseudo-parameters
+
+provider:
+  stage: ${opt:stage, 'dev'}
+  timeout: 300
+  name: aws
+  runtime: python3.7
+  region: ap-southeast-2
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "iam:PassRole"
+      Resource:
+        - arn:aws:iam::#{AWS::AccountId}:role/EMR_DefaultRole
+        - arn:aws:iam::#{AWS::AccountId}:role/EMR_EC2_DefaultRole
+
+    - Effect: "Allow"
+      Action:
+        - "elasticmapreduce:RunJobFlow"
+        # - "autoscaling-plans:*"
+        # - "application-autoscaling:*"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:PutObject"
+      Resource:
+        - "Fn::Join":
+            - ""
+            - - "arn:aws:s3:::"
+              - ${self:custom.csvImportBucketName}
+              - "/*"
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:*"
+      Resource:
+        - "Fn::GetAtt": [ContactsTable, Arn]
+        - "Fn::Join":
+            - "/"
+            - - { "Fn::GetAtt": [ContactsTable, Arn] }
+              - "index/*"
+
+functions:
+  startEMRJob: ${file(resources/function.yml)}
+
+custom:
+  contactsTable: contactsTable
+  csvImportBucketName: myemr.csv.import.${self:provider.stage}
+  tableThroughputs:
+    production: "50"
+    dev: "10"
+  vpc:
+    subsetId: subnet-10607577
+    vpcId: vpc-9d5f72fa
+resources:
+  - ${file(resources/s3.yml)}
+  - ${file(resources/contacts_table.yml)}
