@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def startEMRJob(event, context):
+def start_emr_job(event, context):
     try:
         put_dump_record_to_db()
         put_step_scripts_to_s3()

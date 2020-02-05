@@ -61,7 +61,7 @@ custom:
     dev: "10"
   vpc:
     subsetId: subnet-10607577
-    vpcId: vpc-9d5f72fa
+    #vpcId: vpc-111
 resources:
   - ${file(resources/s3.yml)}
   - ${file(resources/contacts_table.yml)}

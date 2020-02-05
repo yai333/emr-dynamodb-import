@@ -23,4 +23,4 @@ Upload csv file to S3 bucket
 $aws s3 cp csv/contacts.csv s3://myemr.csv.import.dev/uploads/created_date=2020-02-03/contacts.csv
 ```
 
-Then there will be a EMR cluster started automatically, that's all about it, no more step required.
+Then there will be a EMR cluster started automatically, that's all about it, no more step needed.

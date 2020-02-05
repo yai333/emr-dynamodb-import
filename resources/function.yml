@@ -1,4 +1,4 @@
-handler: src/handler.startEMRJob
+handler: src/handler.start_emr_job
 environment:
   CONTACTS_TABLE: ${self:custom.contactsTable}
   SUBNET_ID: ${self:custom.vpc.subsetId}
