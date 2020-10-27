@@ -9,7 +9,7 @@ certifi==2019.11.28
 cffi==1.13.2
 cfn-lint==0.27.3
 chardet==3.0.4
-cryptography==2.8
+cryptography==3.2
 docker==4.1.0
 docutils==0.15.2
 ecdsa==0.15
